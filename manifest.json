@@ -4,8 +4,8 @@
   "description": "Track every rep, own every gain.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0A0A0F",
-  "theme_color": "#0A0A0F",
+  "background_color": "#0B0B11",
+  "theme_color": "#0B0B11",
   "orientation": "portrait",
   "icons": [
     {
