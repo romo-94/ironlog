@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="description" content="IronLog — Track every rep, own every gain.">
+<title>IronLog</title>
+
+<!-- ============ SECTION: PWA MANIFEST (inline data URI) ============ -->
+<link rel="manifest" href="manifest.json">
+
+<!-- ============ SECTION: ICONS ============ -->
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjQwIiBmaWxsPSIjMEEwQTBGIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoOTYsOTYpIj48cmVjdCB4PSItNjAiIHk9Ii04IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE2IiByeD0iOCIgZmlsbD0iIzZDNjNGRiIvPjxyZWN0IHg9Ii03NiIgeT0iLTI4IiB3aWR0aD0iMTYiIGhlaWdodD0iNTYiIHJ4PSI0IiBmaWxsPSIjNkM2M0ZGIi8+PHJlY3QgeD0iNjAiIHk9Ii0yOCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjU2IiByeD0iNCIgZmlsbD0iIzZDNjNGRiIvPjxyZWN0IHg9Ii05MCIgeT0iLTIwIiB3aWR0aD0iMTQiIGhlaWdodD0iNDAiIHJ4PSI3IiBmaWxsPSIjODg4MUZGIi8+PHJlY3QgeD0iNzYiIHk9Ii0yMCIgd2lkdGg9IjE0IiBoZWlnaHQ9IjQwIiByeD0iNyIgZmlsbD0iIzg4ODFGRiIvPjwvZz48L3N2Zz4=">
+
+<!-- ============ SECTION: STYLES ============ -->
+<style>
+/* --- CSS Reset & Variables --- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0A0A0F; --surface: #141418; --card: #1C1C23; --card-hover: #22222B;
+  --accent: #6C63FF; --accent-glow: rgba(108,99,255,0.3); --accent-dim: rgba(108,99,255,0.15);
+  --success: #22C55E; --warning: #F59E0B; --danger: #EF4444;
+  --text: #F8F8FF; --text-sec: #8B8B9E; --text-dim: #55556A;
+  --border: rgba(255,255,255,0.06); --border-accent: rgba(108,99,255,0.3);
+  --radius: 16px; --radius-sm: 10px; --radius-pill: 50px;
+  --nav-h: 72px; --header-h: 56px;
+  --font: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html, body {
+  height: 100%; width: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text); font-family: var(--font);
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+body { display: flex; flex-direction: column; }
+input, button, textarea, select { font-family: inherit; font-size: inherit; }
+button { cursor: pointer; border: none; background: none; color: inherit; }
+input[type="number"] { -moz-appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 4px; }
+
+/* --- Header --- */
+.app-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: calc(var(--header-h) + var(--safe-top));
+  padding-top: var(--safe-top);
+  background: rgba(10,10,15,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; padding-left: 20px; padding-right: 20px;
+}
+.app-header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+.app-header h1 span { color: var(--accent); }
+.header-badge {
+  font-size: 11px; padding: 4px 10px; border-radius: var(--radius-pill);
+  background: var(--accent-dim); color: var(--accent); font-weight: 600;
+}
+.offline-badge { background: rgba(245,158,11,0.15); color: var(--warning); display: none; }
+body.offline .offline-badge { display: inline-block; }
+
+/* --- Main Content Area --- */
+.app-content {
+  flex: 1; overflow: hidden;
+  padding-top: calc(var(--header-h) + var(--safe-top));
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom));
+}
+.view {
+  display: none; height: 100%; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; padding: 16px 16px 24px;
+}
+.view.active { display: block; animation: viewIn 0.3s ease; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- Bottom Nav --- */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: rgba(10,10,15,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-around;
+}
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 16px; border-radius: 12px; transition: all 0.2s;
+  min-width: 64px; position: relative;
+}
+.nav-item svg { width: 24px; height: 24px; stroke: var(--text-sec); fill: none; stroke-width: 1.8; transition: all 0.2s; }
+.nav-item span { font-size: 10px; font-weight: 600; color: var(--text-sec); transition: all 0.2s; letter-spacing: 0.3px; }
+.nav-item.active svg { stroke: var(--accent); }
+.nav-item.active span { color: var(--accent); }
+.nav-item.active::before {
+  content: ''; position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+  width: 24px; height: 3px; background: var(--accent); border-radius: 0 0 3px 3px;
+}
+.nav-item:active { transform: scale(0.92); }
+
+/* --- Cards --- */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+  animation: cardIn 0.35s ease both;
+}
+@keyframes cardIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.card-title { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+.card-subtitle { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+.muscle-tag {
+  font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: var(--radius-pill);
+  background: var(--accent-dim); color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px;
+}
+.muscle-tag.trainer { background: rgba(245,158,11,0.15); color: var(--warning); }
+
+/* --- Inputs --- */
+.input-pill {
+  width: 100%; height: 44px; padding: 0 16px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill); color: var(--text);
+  font-size: 15px; font-weight: 500; transition: all 0.2s;
+  text-align: center;
+}
+.input-pill:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.input-pill::placeholder { color: var(--text-dim); }
+.input-sm { width: 72px; height: 40px; padding: 0 8px; font-size: 14px; }
+
+/* --- Buttons --- */
+.btn {
+  height: 48px; padding: 0 24px; border-radius: var(--radius-pill);
+  font-size: 15px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; transition: all 0.2s; min-width: 44px;
+}
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:active { background: #5B52EE; }
+.btn-secondary { background: transparent; border: 1.5px solid var(--accent); color: var(--accent); }
+.btn-ghost { color: var(--accent); padding: 0 12px; height: 40px; font-size: 13px; }
+.btn-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+.btn-full { width: 100%; }
+.btn-sm { height: 36px; padding: 0 14px; font-size: 13px; border-radius: var(--radius-pill); }
+.btn-icon {
+  width: 40px; height: 40px; padding: 0; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* --- Set Row --- */
+.set-row {
+  display: grid; grid-template-columns: 36px 1fr 1fr 44px; gap: 8px;
+  align-items: center; padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.set-row.completed { opacity: 0.5; }
+.set-row.completed .set-check { background: var(--success); border-color: var(--success); }
+.set-row.completed .set-check svg { opacity: 1; }
+.set-num { font-size: 13px; font-weight: 700; color: var(--text-sec); text-align: center; }
+.set-check {
+  width: 36px; height: 36px; border-radius: 10px;
+  border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; background: transparent;
+}
+.set-check svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.5; opacity: 0; transition: opacity 0.2s; }
+.set-check:active { transform: scale(0.9); }
+.set-header { display: grid; grid-template-columns: 36px 1fr 1fr 44px; gap: 8px; padding: 4px 0; margin-bottom: 4px; }
+.set-header span { font-size: 11px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.set-header span:first-child { text-align: center; }
+.previous-ghost {
+  font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 2px;
+}
+
+/* --- Workout Day Selector --- */
+.day-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.day-card {
+  background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 16px; text-align: center; transition: all 0.2s;
+}
+.day-card:active { transform: scale(0.97); }
+.day-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+.day-card .day-num { font-size: 28px; font-weight: 800; color: var(--accent); line-height: 1; }
+.day-card .day-label { font-size: 12px; color: var(--text-sec); margin-top: 4px; font-weight: 600; }
+
+/* --- Stats Grid --- */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px; text-align: center;
+}
+.stat-value { font-size: 26px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+.stat-label { font-size: 11px; color: var(--text-sec); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value.accent { color: var(--accent); }
+.stat-value.success { color: var(--success); }
+.stat-value.warning { color: var(--warning); }
+
+/* --- Progress Ring --- */
+.progress-ring { position: relative; width: 80px; height: 80px; margin: 0 auto 8px; }
+.progress-ring svg { transform: rotate(-90deg); }
+.progress-ring .ring-bg { stroke: var(--surface); }
+.progress-ring .ring-fill { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+.progress-ring .ring-text {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-size: 18px; font-weight: 800;
+}
+
+/* --- Chart --- */
+.chart-container { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+.chart-container canvas { width: 100% !important; height: 180px !important; }
+.chart-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+
+/* --- History --- */
+.history-item {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 10px; overflow: hidden; transition: all 0.2s;
+}
+.history-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+.history-header:active { background: var(--card-hover); }
+.history-date { font-size: 14px; font-weight: 700; }
+.history-meta { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+.history-badge { font-size: 11px; padding: 3px 10px; border-radius: var(--radius-pill); background: var(--accent-dim); color: var(--accent); font-weight: 700; }
+.history-detail { padding: 0 16px 14px; display: none; border-top: 1px solid var(--border); }
+.history-detail.open { display: block; padding-top: 12px; }
+.history-exercise { font-size: 13px; padding: 6px 0; color: var(--text-sec); display: flex; justify-content: space-between; }
+.history-exercise .name { color: var(--text); font-weight: 600; }
+
+/* --- Filter Bar --- */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+.filter-chip {
+  padding: 8px 16px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600;
+  background: var(--card); border: 1px solid var(--border); color: var(--text-sec);
+  white-space: nowrap; transition: all 0.2s; flex-shrink: 0;
+}
+.filter-chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.filter-chip:active { transform: scale(0.95); }
+
+/* --- PR Section --- */
+.pr-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.pr-icon {
+  width: 36px; height: 36px; border-radius: 10px; background: rgba(245,158,11,0.15);
+  display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+}
+.pr-name { font-size: 13px; font-weight: 600; }
+.pr-detail { font-size: 12px; color: var(--text-sec); margin-top: 1px; }
+.pr-weight { font-size: 18px; font-weight: 800; color: var(--warning); margin-left: auto; white-space: nowrap; }
+
+/* --- Modal --- */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px); display: none; align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+.modal {
+  background: var(--surface); border-radius: 20px 20px 0 0; width: 100%; max-width: 480px;
+  padding: 24px 20px calc(24px + var(--safe-bottom)); max-height: 85vh;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-handle { width: 36px; height: 4px; background: var(--text-dim); border-radius: 2px; margin: 0 auto 20px; }
+.modal h2 { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+.modal-field { margin-bottom: 14px; }
+.modal-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-sec); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.modal-field .input-pill { text-align: left; }
+
+/* --- Toast --- */
+.toast {
+  position: fixed; top: calc(var(--header-h) + var(--safe-top) + 12px);
+  left: 50%; transform: translateX(-50%) translateY(-100px);
+  padding: 12px 20px; border-radius: var(--radius-pill);
+  font-size: 13px; font-weight: 700; z-index: 300;
+  background: var(--card); border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  transition: transform 0.3s ease; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: rgba(34,197,94,0.3); }
+.toast.warning { border-color: rgba(245,158,11,0.3); }
+.toast.error { border-color: rgba(239,68,68,0.3); }
+
+/* --- Section Headers --- */
+.section-title { font-size: 18px; font-weight: 800; margin-bottom: 14px; letter-spacing: -0.3px; }
+.section-subtitle { font-size: 13px; color: var(--text-sec); margin-bottom: 16px; }
+.section-divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* --- Settings --- */
+.settings-group { margin-bottom: 24px; }
+.settings-label { font-size: 12px; font-weight: 600; color: var(--text-sec); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.settings-input { width: 100%; text-align: left; }
+.settings-info { font-size: 11px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+
+/* --- Empty State --- */
+.empty-state { text-align: center; padding: 48px 24px; }
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state .title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.empty-state .desc { font-size: 13px; color: var(--text-sec); line-height: 1.5; }
+
+/* --- Quick Start --- */
+.quick-start {
+  background: linear-gradient(135deg, var(--accent), #8B5CF6);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden;
+}
+.quick-start::before {
+  content: ''; position: absolute; top: -50%; right: -30%; width: 200px; height: 200px;
+  background: rgba(255,255,255,0.08); border-radius: 50%;
+}
+.quick-start .qs-label { font-size: 12px; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; }
+.quick-start .qs-title { font-size: 20px; font-weight: 800; margin: 6px 0 4px; }
+.quick-start .qs-sub { font-size: 13px; opacity: 0.7; margin-bottom: 14px; }
+.quick-start .btn { background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); }
+.quick-start .btn:active { background: rgba(255,255,255,0.3); }
+
+/* --- Swipe Delete --- */
+.swipe-container { position: relative; overflow: hidden; }
+.swipe-delete-bg {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 80px;
+  background: var(--danger); display: flex; align-items: center; justify-content: center;
+  border-radius: 0 8px 8px 0; opacity: 0; transition: opacity 0.2s;
+}
+.swipe-delete-bg.visible { opacity: 1; }
+.swipe-content { position: relative; background: var(--card); transition: transform 0.2s; }
+
+/* --- Misc --- */
+.flex { display: flex; } .flex-col { flex-direction: column; }
+.items-center { align-items: center; } .justify-between { justify-content: space-between; }
+.gap-8 { gap: 8px; } .gap-12 { gap: 12px; }
+.mt-8 { margin-top: 8px; } .mt-12 { margin-top: 12px; } .mt-16 { margin-top: 16px; } .mt-20 { margin-top: 20px; }
+.mb-8 { margin-bottom: 8px; } .mb-12 { margin-bottom: 12px; } .mb-16 { margin-bottom: 16px; }
+.text-center { text-align: center; }
+.text-sec { color: var(--text-sec); }
+.text-sm { font-size: 12px; }
+.text-xs { font-size: 11px; }
+.font-bold { font-weight: 700; }
+.w-full { width: 100%; }
+
+/* --- Animation delay helpers --- */
+.card:nth-child(1) { animation-delay: 0s; }
+.card:nth-child(2) { animation-delay: 0.05s; }
+.card:nth-child(3) { animation-delay: 0.1s; }
+.card:nth-child(4) { animation-delay: 0.15s; }
+.card:nth-child(5) { animation-delay: 0.2s; }
+.card:nth-child(6) { animation-delay: 0.25s; }
+
+/* --- Pulse animation for set complete --- */
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+.pulse { animation: pulse 0.25s ease; }
+
+/* --- Workout active header --- */
+.log-header {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 16px; margin-bottom: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.log-header .workout-label { font-size: 16px; font-weight: 800; }
+.log-header .workout-meta { font-size: 12px; color: var(--text-sec); }
+
+/* Timer */
+.rest-timer {
+  position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px);
+  right: 16px; z-index: 90;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: none; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800;
+  box-shadow: 0 4px 20px var(--accent-glow);
+  animation: pulse 2s infinite;
+}
+.rest-timer.active { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- ============ SECTION: HEADER ============ -->
+<header class="app-header">
+  <h1>Iron<span>Log</span></h1>
+  <div>
+    <span class="header-badge offline-badge">⚡ Offline</span>
+  </div>
+</header>
+
+<!-- ============ SECTION: MAIN CONTENT ============ -->
+<main class="app-content">
+
+  <!-- ===== DASHBOARD VIEW ===== -->
+  <div id="view-dashboard" class="view active">
+    <div id="quick-start-container"></div>
+    <div class="stats-grid" id="dashboard-stats"></div>
+    <div class="chart-container">
+      <div class="chart-title">Weekly Volume (kg)</div>
+      <canvas id="volume-chart"></canvas>
+    </div>
+    <div id="last-workout-card"></div>
+    <div class="section-title mt-16">🏆 Personal Records</div>
+    <div id="pr-list"></div>
+  </div>
+
+  <!-- ===== LOG VIEW ===== -->
+  <div id="view-log" class="view">
+    <div id="day-selector-container">
+      <div class="section-title">Choose Workout</div>
+      <div class="section-subtitle">Select your training day to start logging</div>
+      <div class="day-selector" id="day-selector"></div>
+    </div>
+    <div id="workout-logger" style="display:none">
+      <div class="log-header">
+        <div>
+          <div class="workout-label" id="log-workout-title"></div>
+          <div class="workout-meta" id="log-workout-meta"></div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="App.cancelWorkout()">Cancel</button>
+      </div>
+      <div id="exercise-cards"></div>
+      <button class="btn btn-secondary btn-full mt-12" onclick="App.openCustomExerciseModal()">
+        + Add Custom Exercise
+      </button>
+      <button class="btn btn-primary btn-full mt-12" id="save-workout-btn" onclick="App.saveWorkout()">
+        💾 Save Workout
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== HISTORY VIEW ===== -->
+  <div id="view-history" class="view">
+    <div class="section-title">Workout History</div>
+    <div class="filter-bar" id="history-filters"></div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- ===== SETTINGS VIEW ===== -->
+  <div id="view-settings" class="view">
+    <div class="section-title">Settings</div>
+    <div class="settings-group">
+      <div class="settings-label">Google Sheets Sync</div>
+      <input type="url" class="input-pill settings-input" id="gas-url" placeholder="Paste your Google Apps Script URL" oninput="App.saveGASUrl(this.value)">
+      <div class="settings-info">Deploy your Apps Script as a web app and paste the URL above. All workouts will sync automatically.</div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-label">Pending Syncs</div>
+      <div id="pending-syncs-count" class="text-sec text-sm">0 workouts waiting to sync</div>
+      <button class="btn btn-secondary btn-sm mt-8" onclick="App.retrySync()">Retry Sync Now</button>
+    </div>
+    <div class="settings-group">
+      <div class="settings-label">Data</div>
+      <button class="btn btn-secondary btn-sm" onclick="App.exportData()">📦 Export All Data (JSON)</button>
+      <button class="btn btn-danger btn-sm mt-8" onclick="App.confirmClearData()">🗑️ Clear All Data</button>
+    </div>
+    <div class="settings-group">
+      <div class="settings-label">About</div>
+      <div class="text-sec text-sm">IronLog v1.0 — Built for lifters who track.</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ============ SECTION: BOTTOM NAV ============ -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-view="dashboard" onclick="App.switchView('dashboard')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Dashboard</span>
+  </button>
+  <button class="nav-item" data-view="log" onclick="App.switchView('log')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    <span>Log</span>
+  </button>
+  <button class="nav-item" data-view="history" onclick="App.switchView('history')">
+    <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+    <span>History</span>
+  </button>
+  <button class="nav-item" data-view="settings" onclick="App.switchView('settings')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>Settings</span>
+  </button>
+</nav>
+
+<!-- ============ SECTION: REST TIMER FLOATING BUTTON ============ -->
+<div class="rest-timer" id="rest-timer" onclick="App.dismissTimer()"></div>
+
+<!-- ============ SECTION: MODALS ============ -->
+<div class="modal-overlay" id="modal-custom-exercise">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Add Custom Exercise</h2>
+    <div class="modal-field">
+      <label>Exercise Name</label>
+      <input type="text" class="input-pill" id="custom-ex-name" placeholder="e.g. Dumbbell Fly">
+    </div>
+    <div class="modal-field">
+      <label>Muscle Group</label>
+      <input type="text" class="input-pill" id="custom-ex-muscle" placeholder="e.g. Chest">
+    </div>
+    <button class="btn btn-primary btn-full mt-8" onclick="App.addCustomExercise()">Add Exercise</button>
+    <button class="btn btn-ghost btn-full mt-8" onclick="App.closeModal('modal-custom-exercise')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 id="confirm-title">Are you sure?</h2>
+    <p class="text-sec text-sm mb-16" id="confirm-message">This action cannot be undone.</p>
+    <button class="btn btn-danger btn-full" id="confirm-action-btn">Confirm</button>
+    <button class="btn btn-ghost btn-full mt-8" onclick="App.closeModal('modal-confirm')">Cancel</button>
+  </div>
+</div>
+
+<!-- ============ SECTION: TOAST ============ -->
+<div class="toast" id="toast"></div>
+
+<!-- ============ SECTION: JAVASCRIPT ============ -->
+<script>
+/* ============================================================
+   SECTION: IndexedDB Async Wrapper
+   ============================================================ */
+const IDB = (() => {
+  const DB_NAME = 'IronLogDB';
+  const DB_VERSION = 2;
+  let db = null;
+
+  function open() {
+    return new Promise((resolve, reject) => {
+      if (db) return resolve(db);
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains('workouts')) {
+          const ws = d.createObjectStore('workouts', { keyPath: 'id', autoIncrement: true });
+          ws.createIndex('date', 'date', { unique: false });
+          ws.createIndex('workoutDay', 'workoutDay', { unique: false });
+        }
+        if (!d.objectStoreNames.contains('settings')) d.createObjectStore('settings', { keyPath: 'key' });
+        if (!d.objectStoreNames.contains('customExercises')) d.createObjectStore('customExercises', { keyPath: 'id', autoIncrement: true });
+        if (!d.objectStoreNames.contains('syncQueue')) d.createObjectStore('syncQueue', { keyPath: 'id', autoIncrement: true });
+      };
+      req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function tx(store, mode) {
+    const d = await open();
+    return d.transaction(store, mode).objectStore(store);
+  }
+
+  function promisify(req) {
+    return new Promise((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  return {
+    async getAll(store) { const s = (await open()).transaction(store, 'readonly').objectStore(store); return promisify(s.getAll()); },
+    async get(store, key) { const s = (await open()).transaction(store, 'readonly').objectStore(store); return promisify(s.get(key)); },
+    async put(store, data) { const s = (await open()).transaction(store, 'readwrite').objectStore(store); return promisify(s.put(data)); },
+    async add(store, data) { const s = (await open()).transaction(store, 'readwrite').objectStore(store); return promisify(s.add(data)); },
+    async delete(store, key) { const s = (await open()).transaction(store, 'readwrite').objectStore(store); return promisify(s.delete(key)); },
+    async clear(store) { const s = (await open()).transaction(store, 'readwrite').objectStore(store); return promisify(s.clear()); },
+    async getAllByIndex(store, indexName, value) {
+      const s = (await open()).transaction(store, 'readonly').objectStore(store);
+      const idx = s.index(indexName);
+      return promisify(idx.getAll(value));
+    }
+  };
+})();
+
+/* ============================================================
+   SECTION: Exercise Library
+   ============================================================ */
+const EXERCISE_LIB = {
+  1: {
+    name: 'Lower Body',
+    exercises: [
+      { name: 'Barbell Back Squat', muscle: 'Quads', trainer: false },
+      { name: 'DB Reverse Lunge', muscle: 'Quads', trainer: false },
+      { name: 'RDL (Romanian Deadlift)', muscle: 'Hamstrings', trainer: false },
+      { name: 'Seated Leg Curl', muscle: 'Hamstrings', trainer: false },
+      { name: 'DB Glute Bridge', muscle: 'Glutes', trainer: false },
+      { name: 'Walking Lunge', muscle: 'Quads', trainer: true },
+      { name: 'Goblet Squat', muscle: 'Quads', trainer: true },
+      { name: 'Nordic Curl', muscle: 'Hamstrings', trainer: true },
+    ]
+  },
+  2: {
+    name: 'Upper Body',
+    exercises: [
+      { name: 'Lat Pulldown', muscle: 'Back', trainer: false },
+      { name: 'Cable Row', muscle: 'Back', trainer: false },
+      { name: 'Cable Face Pull', muscle: 'Rear Delts', trainer: false },
+      { name: 'Flat DB Bench', muscle: 'Chest', trainer: false },
+      { name: 'Lateral Raise', muscle: 'Shoulders', trainer: false },
+      { name: 'Cable Rope Pushdown', muscle: 'Triceps', trainer: false },
+      { name: 'Incline DB Curl', muscle: 'Biceps', trainer: false },
+      { name: 'Cable Crunch', muscle: 'Core', trainer: false },
+      { name: 'Chest-Supported Row', muscle: 'Back', trainer: true },
+      { name: 'Pec Deck Fly', muscle: 'Chest', trainer: true },
+      { name: 'Hammer Curl', muscle: 'Biceps', trainer: true },
+    ]
+  },
+  3: {
+    name: 'Lower Body',
+    exercises: [
+      { name: 'Hip Thrust', muscle: 'Glutes', trainer: false },
+      { name: 'Leg Press', muscle: 'Quads', trainer: false },
+      { name: 'Bulgarian Split Squat', muscle: 'Quads', trainer: false },
+      { name: 'Leg Extension', muscle: 'Quads', trainer: false },
+      { name: 'Reverse Crunch', muscle: 'Core', trainer: false },
+      { name: 'Cable Kickback', muscle: 'Glutes', trainer: false },
+      { name: 'Sumo Deadlift', muscle: 'Hamstrings', trainer: true },
+      { name: 'Calf Raise', muscle: 'Calves', trainer: true },
+      { name: 'Lying Leg Curl', muscle: 'Hamstrings', trainer: true },
+    ]
+  },
+  4: {
+    name: 'Upper Body',
+    exercises: [
+      { name: 'Seated Shoulder Press', muscle: 'Shoulders', trainer: false },
+      { name: 'Single Arm Cable Lat Pulldown', muscle: 'Back', trainer: false },
+      { name: 'Incline DB Bench Press', muscle: 'Chest', trainer: false },
+      { name: 'Cable Lateral Raise', muscle: 'Shoulders', trainer: false },
+      { name: 'Machine Rear Delt Fly', muscle: 'Rear Delts', trainer: false },
+      { name: 'DB Bicep Curl', muscle: 'Biceps', trainer: false },
+      { name: 'Arnold Press', muscle: 'Shoulders', trainer: true },
+      { name: 'Straight Bar Pushdown', muscle: 'Triceps', trainer: true },
+      { name: 'Concentration Curl', muscle: 'Biceps', trainer: true },
+    ]
+  }
+};
+
+/* ============================================================
+   SECTION: DataStore — Single source of truth for all mutations
+   ============================================================ */
+const DataStore = {
+  // Save a complete workout session
+  async saveWorkout(workout) {
+    const id = await IDB.add('workouts', workout);
+    // Attempt sync
+    const synced = await DataStore.syncToSheets(workout);
+    if (!synced) {
+      await IDB.add('syncQueue', { ...workout, _retryId: id });
+    }
+    return id;
+  },
+
+  async getAllWorkouts() {
+    return await IDB.getAll('workouts');
+  },
+
+  async getWorkoutsByDay(day) {
+    return await IDB.getAllByIndex('workouts', 'workoutDay', day);
+  },
+
+  // Get the last workout for an exercise name to show "previous" ghost
+  async getLastWeight(exerciseName) {
+    const all = await IDB.getAll('workouts');
+    for (let i = all.length - 1; i >= 0; i--) {
+      const w = all[i];
+      const ex = w.exercises.find(e => e.name === exerciseName);
+      if (ex && ex.sets.length > 0) {
+        const best = ex.sets.reduce((m, s) => s.weight > m ? s.weight : m, 0);
+        return best;
+      }
+    }
+    return null;
+  },
+
+  // Custom exercises per workout day
+  async getCustomExercises(day) {
+    const all = await IDB.getAll('customExercises');
+    return all.filter(e => e.workoutDay === day);
+  },
+
+  async addCustomExercise(exercise) {
+    return await IDB.add('customExercises', exercise);
+  },
+
+  // Settings
+  async getSetting(key) {
+    const r = await IDB.get('settings', key);
+    return r ? r.value : null;
+  },
+
+  async setSetting(key, value) {
+    return await IDB.put('settings', { key, value });
+  },
+
+  // Sync to Google Sheets
+  async syncToSheets(workout) {
+    const url = await DataStore.getSetting('gasUrl');
+    if (!url) return false;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(workout),
+      });
+      if (res.ok) {
+        showToast('✅ Synced to Sheets', 'success');
+        return true;
+      }
+      throw new Error('Sync failed');
+    } catch (e) {
+      showToast('⚠️ Saved locally — sync pending', 'warning');
+      return false;
+    }
+  },
+
+  // Retry queued syncs
+  async retryPendingSync() {
+    const queue = await IDB.getAll('syncQueue');
+    if (queue.length === 0) { showToast('No pending syncs', 'success'); return; }
+    let success = 0;
+    for (const item of queue) {
+      const synced = await DataStore.syncToSheets(item);
+      if (synced) {
+        await IDB.delete('syncQueue', item.id);
+        success++;
+      }
+    }
+    if (success > 0) showToast(`✅ Synced ${success} workout(s)`, 'success');
+    App.updatePendingSyncs();
+  },
+
+  async getPendingSyncCount() {
+    const queue = await IDB.getAll('syncQueue');
+    return queue.length;
+  },
+
+  // PR detection — highest weight per exercise
+  async getPersonalRecords() {
+    const all = await IDB.getAll('workouts');
+    const prs = {};
+    for (const w of all) {
+      for (const ex of w.exercises) {
+        for (const s of ex.sets) {
+          if (!prs[ex.name] || s.weight > prs[ex.name].weight) {
+            prs[ex.name] = { weight: s.weight, reps: s.reps, date: w.date };
+          }
+        }
+      }
+    }
+    return prs;
+  },
+
+  // Weekly volume (last 7 days)
+  async getWeeklyVolume() {
+    const all = await IDB.getAll('workouts');
+    const days = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = localDateStr(d);
+      const dayWorkouts = all.filter(w => w.date === dateStr);
+      let vol = 0;
+      dayWorkouts.forEach(w => { vol += w.totalVolume || 0; });
+      days.push({ date: dateStr, label: d.toLocaleDateString('en', { weekday: 'short' }), volume: vol });
+    }
+    return days;
+  },
+
+  // Streak calculation
+  async getStreak() {
+    const all = await IDB.getAll('workouts');
+    if (all.length === 0) return 0;
+    const dates = [...new Set(all.map(w => w.date))].sort().reverse();
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 0; i < dates.length; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(checkDate.getDate() - i);
+      const checkStr = localDateStr(checkDate);
+      if (dates.includes(checkStr)) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  },
+
+  // Get next workout day in rotation
+  async getNextWorkoutDay() {
+    const all = await IDB.getAll('workouts');
+    if (all.length === 0) return 1;
+    const lastDay = all[all.length - 1].workoutDay;
+    return (lastDay % 4) + 1;
+  },
+
+  async clearAllData() {
+    await IDB.clear('workouts');
+    await IDB.clear('customExercises');
+    await IDB.clear('syncQueue');
+  },
+
+  async exportAllData() {
+    const workouts = await IDB.getAll('workouts');
+    const customs = await IDB.getAll('customExercises');
+    return JSON.stringify({ workouts, customExercises: customs }, null, 2);
+  }
+};
+
+/* ============================================================
+   SECTION: Toast Notifications
+   ============================================================ */
+let toastTimeout;
+function showToast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + type;
+  clearTimeout(toastTimeout);
+  requestAnimationFrame(() => { el.classList.add('show'); });
+  toastTimeout = setTimeout(() => { el.classList.remove('show'); }, 2800);
+}
+
+/* ============================================================
+   SECTION: Local Date/Time Helpers
+   All timestamps use the device's system timezone, not UTC.
+   ============================================================ */
+function localDateStr(d) {
+  d = d || new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function localTimeStr(d) {
+  d = d || new Date();
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${min}`;
+}
+
+/* ============================================================
+   SECTION: Canvas Chart — Weekly Volume Bar Chart
+   ============================================================ */
+function drawVolumeChart(data) {
+  const canvas = document.getElementById('volume-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = 180 * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '180px';
+  ctx.scale(dpr, dpr);
+
+  const W = rect.width;
+  const H = 180;
+  const pad = { top: 8, bottom: 32, left: 8, right: 8 };
+  const chartW = W - pad.left - pad.right;
+  const chartH = H - pad.top - pad.bottom;
+  const max = Math.max(...data.map(d => d.volume), 100);
+  const barW = Math.min(36, (chartW / data.length) - 12);
+  const gap = (chartW - barW * data.length) / (data.length + 1);
+
+  ctx.clearRect(0, 0, W, H);
+
+  data.forEach((d, i) => {
+    const x = pad.left + gap + i * (barW + gap);
+    const barH = (d.volume / max) * chartH;
+    const y = pad.top + chartH - barH;
+
+    // Bar
+    const gradient = ctx.createLinearGradient(0, y, 0, y + barH);
+    gradient.addColorStop(0, d.volume > 0 ? '#6C63FF' : '#2A2A35');
+    gradient.addColorStop(1, d.volume > 0 ? '#4B44CC' : '#1C1C23');
+    ctx.fillStyle = gradient;
+    roundRect(ctx, x, y, barW, barH, 6);
+    ctx.fill();
+
+    // Value on top
+    if (d.volume > 0) {
+      ctx.fillStyle = '#F8F8FF';
+      ctx.font = '600 10px ' + getComputedStyle(document.body).fontFamily;
+      ctx.textAlign = 'center';
+      ctx.fillText(formatVol(d.volume), x + barW / 2, y - 6);
+    }
+
+    // Day label
+    ctx.fillStyle = '#8B8B9E';
+    ctx.font = '600 11px ' + getComputedStyle(document.body).fontFamily;
+    ctx.textAlign = 'center';
+    ctx.fillText(d.label, x + barW / 2, H - 8);
+  });
+}
+
+function formatVol(v) {
+  if (v >= 1000) return (v / 1000).toFixed(1) + 'k';
+  return v.toString();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  if (h < 1) h = 1;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+/* ============================================================
+   SECTION: App Controller
+   ============================================================ */
+const App = {
+  currentView: 'dashboard',
+  activeWorkoutDay: null,
+  workoutStartTime: null,
+  restTimerInterval: null,
+  restSeconds: 0,
+
+  async init() {
+    // Register SW
+    App.registerSW();
+    // Detect online/offline
+    window.addEventListener('online', () => { document.body.classList.remove('offline'); DataStore.retryPendingSync(); });
+    window.addEventListener('offline', () => { document.body.classList.add('offline'); });
+    if (!navigator.onLine) document.body.classList.add('offline');
+
+    // Load settings
+    const url = await DataStore.getSetting('gasUrl');
+    if (url) document.getElementById('gas-url').value = url;
+
+    // Build views
+    await App.renderDashboard();
+    App.renderDaySelector();
+    await App.renderHistory();
+    await App.updatePendingSyncs();
+
+    // Resize chart
+    window.addEventListener('resize', () => App.renderVolumeChart());
+    window.addEventListener('orientationchange', () => setTimeout(() => App.renderVolumeChart(), 200));
+
+    // Try retry on startup
+    if (navigator.onLine) DataStore.retryPendingSync();
+  },
+
+  // --- Navigation ---
+  switchView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector(`.nav-item[data-view="${name}"]`).classList.add('active');
+    this.currentView = name;
+    if (name === 'dashboard') this.renderDashboard();
+    if (name === 'history') this.renderHistory();
+  },
+
+  // --- Dashboard ---
+  async renderDashboard() {
+    // Quick start
+    const nextDay = await DataStore.getNextWorkoutDay();
+    const dayInfo = EXERCISE_LIB[nextDay];
+    document.getElementById('quick-start-container').innerHTML = `
+      <div class="quick-start" onclick="App.startWorkout(${nextDay})">
+        <div class="qs-label">Up Next</div>
+        <div class="qs-title">Day ${nextDay} — ${dayInfo.name}</div>
+        <div class="qs-sub">${dayInfo.exercises.filter(e=>!e.trainer).length} exercises queued</div>
+        <div class="btn">Start Workout →</div>
+      </div>
+    `;
+
+    // Stats
+    const all = await DataStore.getAllWorkouts();
+    const streak = await DataStore.getStreak();
+    const totalSessions = all.length;
+    const totalVol = all.reduce((s, w) => s + (w.totalVolume || 0), 0);
+    const totalSets = all.reduce((s, w) => s + (w.totalSets || 0), 0);
+
+    document.getElementById('dashboard-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-value accent">${streak}</div><div class="stat-label">Day Streak 🔥</div></div>
+      <div class="stat-card"><div class="stat-value">${totalSessions}</div><div class="stat-label">Sessions</div></div>
+      <div class="stat-card"><div class="stat-value success">${formatVol(totalVol)}</div><div class="stat-label">Total Volume (kg)</div></div>
+      <div class="stat-card"><div class="stat-value warning">${totalSets}</div><div class="stat-label">Total Sets</div></div>
+    `;
+
+    // Volume chart
+    await App.renderVolumeChart();
+
+    // Last workout
+    if (all.length > 0) {
+      const last = all[all.length - 1];
+      document.getElementById('last-workout-card').innerHTML = `
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Last Workout</div>
+            <span class="muscle-tag">Day ${last.workoutDay}</span>
+          </div>
+          <div class="flex justify-between items-center text-sm text-sec">
+            <span>${last.date} · ${last.workoutName}</span>
+            <span>${last.totalSets} sets · ${formatVol(last.totalVolume)} kg</span>
+          </div>
+        </div>
+      `;
+    } else {
+      document.getElementById('last-workout-card').innerHTML = '';
+    }
+
+    // PRs
+    const prs = await DataStore.getPersonalRecords();
+    const prList = document.getElementById('pr-list');
+    const entries = Object.entries(prs).sort((a, b) => b[1].weight - a[1].weight).slice(0, 10);
+    if (entries.length === 0) {
+      prList.innerHTML = '<div class="empty-state"><div class="icon">🏆</div><div class="desc">PRs appear here after your first workout</div></div>';
+    } else {
+      prList.innerHTML = entries.map(([name, pr]) => `
+        <div class="pr-item">
+          <div class="pr-icon">🏆</div>
+          <div><div class="pr-name">${name}</div><div class="pr-detail">${pr.reps} reps · ${pr.date}</div></div>
+          <div class="pr-weight">${pr.weight} kg</div>
+        </div>
+      `).join('');
+    }
+  },
+
+  async renderVolumeChart() {
+    const data = await DataStore.getWeeklyVolume();
+    drawVolumeChart(data);
+  },
+
+  // --- Day Selector ---
+  renderDaySelector() {
+    const sel = document.getElementById('day-selector');
+    sel.innerHTML = [1, 2, 3, 4].map(d => `
+      <button class="day-card" onclick="App.startWorkout(${d})">
+        <div class="day-num">${d}</div>
+        <div class="day-label">${EXERCISE_LIB[d].name}</div>
+      </button>
+    `).join('');
+  },
+
+  // --- Start Workout ---
+  async startWorkout(day) {
+    App.activeWorkoutDay = day;
+    App.workoutStartTime = new Date();
+    App.switchView('log');
+
+    document.getElementById('day-selector-container').style.display = 'none';
+    document.getElementById('workout-logger').style.display = 'block';
+
+    const info = EXERCISE_LIB[day];
+    document.getElementById('log-workout-title').textContent = `Day ${day} — ${info.name}`;
+    document.getElementById('log-workout-meta').textContent = new Date().toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' });
+
+    // Get custom exercises for this day
+    const customs = await DataStore.getCustomExercises(day);
+    const allExercises = [
+      ...info.exercises,
+      ...customs.map(c => ({ name: c.name, muscle: c.muscle, trainer: false, custom: true }))
+    ];
+
+    const container = document.getElementById('exercise-cards');
+    container.innerHTML = '';
+
+    for (let i = 0; i < allExercises.length; i++) {
+      const ex = allExercises[i];
+      const lastWeight = await DataStore.getLastWeight(ex.name);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.animationDelay = (i * 0.04) + 's';
+      card.setAttribute('data-exercise', ex.name);
+      card.innerHTML = `
+        <div class="card-header">
+          <div>
+            <div class="card-title">${ex.trainer ? '🏋️ ' : ''}${ex.name}</div>
+            ${ex.custom ? '<div class="card-subtitle">Custom exercise</div>' : ''}
+          </div>
+          <span class="muscle-tag ${ex.trainer ? 'trainer' : ''}">${ex.muscle}</span>
+        </div>
+        <div class="set-header">
+          <span>Set</span><span>Reps</span><span>kg</span><span></span>
+        </div>
+        <div class="sets-container" data-exercise="${ex.name}"></div>
+        ${lastWeight ? `<div class="previous-ghost">Previous best: ${lastWeight} kg</div>` : ''}
+        <button class="btn btn-ghost btn-sm mt-8" onclick="App.addSet(this, '${ex.name.replace(/'/g, "\\'")}')">+ Add Set</button>
+      `;
+      container.appendChild(card);
+
+      // Auto-add 3 empty sets
+      const setsContainer = card.querySelector('.sets-container');
+      for (let s = 0; s < 3; s++) {
+        App.appendSetRow(setsContainer, s + 1, lastWeight);
+      }
+    }
+  },
+
+  appendSetRow(container, num, ghostWeight) {
+    const row = document.createElement('div');
+    row.className = 'set-row';
+    row.innerHTML = `
+      <div class="set-num">${num}</div>
+      <input type="number" class="input-pill input-sm" placeholder="Reps" min="0" inputmode="numeric">
+      <input type="number" class="input-pill input-sm" placeholder="${ghostWeight || 'kg'}" min="0" step="0.5" inputmode="decimal">
+      <button class="set-check" onclick="App.toggleSet(this)">
+        <svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    `;
+
+    // Swipe to delete
+    let startX = 0, currentX = 0, swiping = false;
+    row.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      swiping = true;
+    }, { passive: true });
+    row.addEventListener('touchmove', (e) => {
+      if (!swiping) return;
+      currentX = e.touches[0].clientX;
+      const diff = startX - currentX;
+      if (diff > 10) {
+        row.style.transform = `translateX(${Math.max(-80, -diff)}px)`;
+        row.style.transition = 'none';
+      }
+    }, { passive: true });
+    row.addEventListener('touchend', () => {
+      swiping = false;
+      const diff = startX - currentX;
+      if (diff > 60) {
+        row.style.transition = 'transform 0.2s, opacity 0.2s';
+        row.style.transform = 'translateX(-100%)';
+        row.style.opacity = '0';
+        setTimeout(() => {
+          row.remove();
+          App.renumberSets(row.parentElement);
+        }, 200);
+      } else {
+        row.style.transition = 'transform 0.2s';
+        row.style.transform = 'translateX(0)';
+      }
+    }, { passive: true });
+
+    container.appendChild(row);
+  },
+
+  renumberSets(container) {
+    container.querySelectorAll('.set-row').forEach((row, i) => {
+      row.querySelector('.set-num').textContent = i + 1;
+    });
+  },
+
+  addSet(btn, exerciseName) {
+    const card = btn.closest('.card');
+    const container = card.querySelector('.sets-container');
+    const num = container.querySelectorAll('.set-row').length + 1;
+    App.appendSetRow(container, num, null);
+    // Start rest timer
+    App.startRestTimer();
+  },
+
+  toggleSet(btn) {
+    const row = btn.closest('.set-row');
+    row.classList.toggle('completed');
+    btn.classList.add('pulse');
+    setTimeout(() => btn.classList.remove('pulse'), 300);
+    // Start rest timer on set completion
+    if (row.classList.contains('completed')) App.startRestTimer();
+  },
+
+  // --- Rest Timer ---
+  startRestTimer(secs = 90) {
+    App.restSeconds = secs;
+    const el = document.getElementById('rest-timer');
+    el.classList.add('active');
+    clearInterval(App.restTimerInterval);
+    App.restTimerInterval = setInterval(() => {
+      App.restSeconds--;
+      el.textContent = App.restSeconds + 's';
+      if (App.restSeconds <= 0) App.dismissTimer();
+    }, 1000);
+    el.textContent = App.restSeconds + 's';
+  },
+
+  dismissTimer() {
+    clearInterval(App.restTimerInterval);
+    document.getElementById('rest-timer').classList.remove('active');
+  },
+
+  // --- Save Workout ---
+  async saveWorkout() {
+    const cards = document.querySelectorAll('#exercise-cards .card');
+    const exercises = [];
+    let totalVolume = 0, totalSets = 0;
+
+    cards.forEach(card => {
+      const name = card.getAttribute('data-exercise');
+      const sets = [];
+      card.querySelectorAll('.set-row').forEach((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        const reps = parseInt(inputs[0].value) || 0;
+        const weight = parseFloat(inputs[1].value) || 0;
+        if (reps > 0 || weight > 0) {
+          sets.push({ set: i + 1, reps, weight });
+          totalVolume += reps * weight;
+          totalSets++;
+        }
+      });
+      if (sets.length > 0) {
+        exercises.push({ name, sets });
+      }
+    });
+
+    if (exercises.length === 0) {
+      showToast('⚠️ Log at least one set first', 'warning');
+      return;
+    }
+
+    const now = new Date();
+    const workout = {
+      date: localDateStr(now),
+      time: localTimeStr(now),
+      workoutDay: App.activeWorkoutDay,
+      workoutName: EXERCISE_LIB[App.activeWorkoutDay].name,
+      exercises,
+      totalVolume,
+      totalSets,
+    };
+
+    document.getElementById('save-workout-btn').textContent = 'Saving...';
+    document.getElementById('save-workout-btn').disabled = true;
+
+    try {
+      await DataStore.saveWorkout(workout);
+      showToast('💪 Workout saved!', 'success');
+      App.cancelWorkout();
+      App.switchView('dashboard');
+    } catch (e) {
+      showToast('❌ Error saving workout', 'error');
+    } finally {
+      document.getElementById('save-workout-btn').textContent = '💾 Save Workout';
+      document.getElementById('save-workout-btn').disabled = false;
+    }
+  },
+
+  cancelWorkout() {
+    App.activeWorkoutDay = null;
+    App.dismissTimer();
+    document.getElementById('day-selector-container').style.display = 'block';
+    document.getElementById('workout-logger').style.display = 'none';
+    document.getElementById('exercise-cards').innerHTML = '';
+  },
+
+  // --- Custom Exercise ---
+  openCustomExerciseModal() {
+    document.getElementById('custom-ex-name').value = '';
+    document.getElementById('custom-ex-muscle').value = '';
+    App.openModal('modal-custom-exercise');
+  },
+
+  async addCustomExercise() {
+    const name = document.getElementById('custom-ex-name').value.trim();
+    const muscle = document.getElementById('custom-ex-muscle').value.trim();
+    if (!name) { showToast('Enter a name', 'warning'); return; }
+    if (!App.activeWorkoutDay) return;
+
+    await DataStore.addCustomExercise({
+      name, muscle: muscle || 'General',
+      workoutDay: App.activeWorkoutDay
+    });
+
+    // Add card to current session
+    const container = document.getElementById('exercise-cards');
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.setAttribute('data-exercise', name);
+    card.innerHTML = `
+      <div class="card-header">
+        <div>
+          <div class="card-title">${name}</div>
+          <div class="card-subtitle">Custom exercise</div>
+        </div>
+        <span class="muscle-tag">${muscle || 'General'}</span>
+      </div>
+      <div class="set-header">
+        <span>Set</span><span>Reps</span><span>kg</span><span></span>
+      </div>
+      <div class="sets-container" data-exercise="${name}"></div>
+      <button class="btn btn-ghost btn-sm mt-8" onclick="App.addSet(this, '${name.replace(/'/g, "\\'")}')">+ Add Set</button>
+    `;
+    container.appendChild(card);
+    const setsContainer = card.querySelector('.sets-container');
+    for (let s = 0; s < 3; s++) App.appendSetRow(setsContainer, s + 1, null);
+
+    App.closeModal('modal-custom-exercise');
+    showToast('✅ Exercise added', 'success');
+  },
+
+  // --- History ---
+  historyFilter: 'all',
+
+  async renderHistory() {
+    // Filter bar
+    const filterBar = document.getElementById('history-filters');
+    filterBar.innerHTML = `
+      <button class="filter-chip ${App.historyFilter === 'all' ? 'active' : ''}" onclick="App.setHistoryFilter('all')">All</button>
+      <button class="filter-chip ${App.historyFilter === '1' ? 'active' : ''}" onclick="App.setHistoryFilter('1')">Day 1</button>
+      <button class="filter-chip ${App.historyFilter === '2' ? 'active' : ''}" onclick="App.setHistoryFilter('2')">Day 2</button>
+      <button class="filter-chip ${App.historyFilter === '3' ? 'active' : ''}" onclick="App.setHistoryFilter('3')">Day 3</button>
+      <button class="filter-chip ${App.historyFilter === '4' ? 'active' : ''}" onclick="App.setHistoryFilter('4')">Day 4</button>
+    `;
+
+    let workouts = await DataStore.getAllWorkouts();
+    if (App.historyFilter !== 'all') {
+      workouts = workouts.filter(w => w.workoutDay === parseInt(App.historyFilter));
+    }
+    workouts.reverse();
+
+    const list = document.getElementById('history-list');
+    if (workouts.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div class="title">No workouts yet</div><div class="desc">Your training history will appear here after your first session.</div></div>';
+      return;
+    }
+
+    list.innerHTML = workouts.map((w, i) => `
+      <div class="history-item" data-idx="${i}">
+        <div class="history-header" onclick="App.toggleHistoryDetail(${i})">
+          <div>
+            <div class="history-date">${w.date}</div>
+            <div class="history-meta">${w.exercises.length} exercises · ${w.totalSets} sets · ${formatVol(w.totalVolume)} kg</div>
+          </div>
+          <span class="history-badge">Day ${w.workoutDay}</span>
+        </div>
+        <div class="history-detail" id="history-detail-${i}">
+          ${w.exercises.map(ex => `
+            <div class="history-exercise">
+              <span class="name">${ex.name}</span>
+              <span>${ex.sets.map(s => s.weight + 'kg×' + s.reps).join(', ')}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  },
+
+  setHistoryFilter(f) {
+    App.historyFilter = f;
+    App.renderHistory();
+  },
+
+  toggleHistoryDetail(idx) {
+    const el = document.getElementById('history-detail-' + idx);
+    el.classList.toggle('open');
+  },
+
+  // --- Settings ---
+  async saveGASUrl(url) {
+    await DataStore.setSetting('gasUrl', url.trim());
+  },
+
+  async retrySync() {
+    await DataStore.retryPendingSync();
+  },
+
+  async updatePendingSyncs() {
+    const count = await DataStore.getPendingSyncCount();
+    const el = document.getElementById('pending-syncs-count');
+    if (el) el.textContent = `${count} workout${count !== 1 ? 's' : ''} waiting to sync`;
+  },
+
+  async exportData() {
+    const data = await DataStore.exportAllData();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'ironlog-export-' + localDateStr() + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('📦 Data exported', 'success');
+  },
+
+  confirmClearData() {
+    document.getElementById('confirm-title').textContent = 'Clear All Data?';
+    document.getElementById('confirm-message').textContent = 'This will permanently delete all workouts, custom exercises, and sync queue. This cannot be undone.';
+    document.getElementById('confirm-action-btn').textContent = 'Clear Everything';
+    document.getElementById('confirm-action-btn').onclick = async () => {
+      await DataStore.clearAllData();
+      App.closeModal('modal-confirm');
+      showToast('🗑️ All data cleared', 'success');
+      App.renderDashboard();
+      App.renderHistory();
+    };
+    App.openModal('modal-confirm');
+  },
+
+  // --- Modals ---
+  openModal(id) {
+    document.getElementById(id).classList.add('open');
+  },
+
+  closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  },
+
+  // --- Service Worker ---
+  registerSW() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  }
+};
+
+/* ============================================================
+   SECTION: Initialize
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => App.init());
+
+// Close modals on overlay tap
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>

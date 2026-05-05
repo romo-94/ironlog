@@ -1,0 +1,22 @@
+{
+  "name": "IronLog",
+  "short_name": "IronLog",
+  "description": "Track every rep, own every gain.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0A0A0F",
+  "theme_color": "#0A0A0F",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjQwIiBmaWxsPSIjMEEwQTBGIi8+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoOTYsOTYpIj48cmVjdCB4PSItNjAiIHk9Ii04IiB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE2IiByeD0iOCIgZmlsbD0iIzZDNjNGRiIvPjxyZWN0IHg9Ii03NiIgeT0iLTI4IiB3aWR0aD0iMTYiIGhlaWdodD0iNTYiIHJ4PSI0IiBmaWxsPSIjNkM2M0ZGIi8+PHJlY3QgeD0iNjAiIHk9Ii0yOCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjU2IiByeD0iNCIgZmlsbD0iIzZDNjNGRiIvPjxyZWN0IHg9Ii05MCIgeT0iLTIwIiB3aWR0aD0iMTQiIGhlaWdodD0iNDAiIHJ4PSI3IiBmaWxsPSIjODg4MUZGIi8+PHJlY3QgeD0iNzYiIHk9Ii0yMCIgd2lkdGg9IjE0IiBoZWlnaHQ9IjQwIiByeD0iNyIgZmlsbD0iIzg4ODFGRiIvPjwvZz48L3N2Zz4=",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEwMCIgZmlsbD0iIzBBMEEwRiIvPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI1NiwyNTYpIj48cmVjdCB4PSItMTYwIiB5PSItMjEiIHdpZHRoPSIzMjAiIGhlaWdodD0iNDIiIHJ4PSIyMSIgZmlsbD0iIzZDNjNGRiIvPjxyZWN0IHg9Ii0yMDIiIHk9Ii03NCIgd2lkdGg9IjQyIiBoZWlnaHQ9IjE0OCIgcng9IjEwIiBmaWxsPSIjNkM2M0ZGIi8+PHJlY3QgeD0iMTYwIiB5PSItNzQiIHdpZHRoPSI0MiIgaGVpZ2h0PSIxNDgiIHJ4PSIxMCIgZmlsbD0iIzZDNjNGRiIvPjxyZWN0IHg9Ii0yNDAiIHk9Ii01MyIgd2lkdGg9IjM4IiBoZWlnaHQ9IjEwNiIgcng9IjE5IiBmaWxsPSIjODg4MUZGIi8+PHJlY3QgeD0iMjAyIiB5PSItNTMiIHdpZHRoPSIzOCIgaGVpZ2h0PSIxMDYiIHJ4PSIxOSIgZmlsbD0iIzg4ODFGRiIvPjwvZz48L3N2Zz4=",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
